@@ -1,13 +1,9 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 ## Loading and preprocessing the data
 We need to first unzip the compressed activity data file, downloading it if necessary. We then load the unzipped data into a variable named **activity_data** using the *read.csv* function.
-```{r}
+
+```r
 if(!file.exists("activity.zip")) {
    download.file("https://d396qusza40orc.cloudfront.net/repdata/data/activity.zip", "activity.zip")
 }
@@ -18,52 +14,83 @@ activity_data <- read.csv("activity.csv", header = TRUE, colClasses = c("integer
 ## What is the mean total number of steps taken per day?
 We first need to load the **ggplot2** package that we will use to plot the data.
 
-```{r message=FALSE}
+
+```r
 library("ggplot2")
 ```
 
 We next use the aggregate function to calculate the sum of the **steps** column for each unique value in the **date** column as daily totals. We can then display these aggregated values using a histogram, using the **ggplot2** package.
 
-```{r fig.align='center', fig.path='figure/pa1-'}
+
+```r
 activity_by_date <- aggregate(steps~date,data = activity_data, FUN=sum, na.rm=TRUE)
 ggplot(activity_by_date, aes(x = steps)) +
   geom_histogram(fill = "#669922", binwidth = 1000) +
   labs(title = "Histogram of Steps per day", x = "Steps per day", y = "Frequency")
 ```
 
+<img src="figure/pa1-unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
+
 Finally, we can then use standard functions to display the median and mean of the daily total number of steps.
 
-```{r}
+
+```r
 median(activity_by_date$steps)
+```
+
+```
+## [1] 10765
+```
+
+```r
 mean(activity_by_date$steps)
+```
+
+```
+## [1] 10766.19
 ```
 
 ## What is the average daily activity pattern?
 We can gain a general impression of the daily activity pattern by plotting the mean activity by interval using a line plot. This is done using the *ggplot2* library loaded earlier.
 
-```{r fig.align='center', fig.path='figure/pa1-'}
+
+```r
 activity_mean_by_interval <- aggregate(steps~interval,data = activity_data, FUN=mean, na.rm=TRUE)
 ggplot(activity_mean_by_interval, aes(x=interval, y=steps)) +
   geom_line(color = "#FF3300")
 ```
 
+<img src="figure/pa1-unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
+
 Although the time series plot above shows that the most active interval is somewhere between 800 and 900, we will need to use the *which.max* function to determine precisely which interval contains the maximum number of steps.
 
-```{r}
+
+```r
 activity_mean_by_interval[which.max(activity_mean_by_interval$steps),]
+```
+
+```
+##     interval    steps
+## 104      835 206.1698
 ```
 
 This shows that most activity takes place in interval 835.
 
 ## Imputing missing values
 The data contain a number of rows with NA values in the *steps* column. To determine the number of rows containing NAs, we can sum the number of TRUE values (1s) returned by the **is.na** function.
-```{r}
+
+```r
 sum(is.na(activity_data$steps))
+```
+
+```
+## [1] 2304
 ```
 
 Having established the number of rows containing NA values, we can then impute the missing values.The first task is to return a vector containing a logical value indicating whether a row contains NAs or not. We then use the tagged apply function **tapply** to calculate the mean value for each interval and store it into an array (named *mean_by_interval*) indexed by the interval value. Finally, we use the data in *mean_by_interval* to set the imputed values in place of the NAs.
 
-```{r}
+
+```r
 activity_with_imputed <- activity_data
 na_steps <- is.na(activity_with_imputed$steps)
 mean_by_interval <- tapply(activity_with_imputed$steps, activity_with_imputed$interval, mean, simplify=TRUE, na.rm=TRUE)
@@ -71,21 +98,30 @@ activity_with_imputed$steps[na_steps] <- mean_by_interval[as.character(activity_
 ```
 
 We can then check that there are no NA values remaining in the dataset by summing the result of the **is.na** function run on all the data.
-```{r}
+
+```r
 sum(is.na(activity_with_imputed))
+```
+
+```
+## [1] 0
 ```
 We can also see if the distribution of values in the steps column has changed by plotting a histogram for the data with imputed values.
 
-```{r fig.align='center', fig.path='figure/pa-1'}
+
+```r
 activity_by_date_imputed <- aggregate(steps~date,data = activity_data, FUN=sum, na.rm=TRUE)
 ggplot(activity_by_date_imputed, aes(x = steps)) +
   geom_histogram(fill = "#759021", binwidth = 1000) +
   labs(title = "Histogram of Steps per day with imputed values", x = "Steps per day", y = "Frequency")
 ```
 
+<img src="figure/pa-1unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
+
 ## Are there differences in activity patterns between weekdays and weekends?
 We first have to create a new computed column containing a logical value indicating whether the data in the row pertain to a weekend or weekday. This is done by testing if the value returned by the **weekdays** function is found in the list of weekend days. We then aggregate and plot the data for the weekend and weekdays separately, but as part of a faceted plot arrangement.
-```{r fig.align='center', fig.path='figure/pa-1'}
+
+```r
 activity_with_imputed$weekend <- weekdays(activity_with_imputed$date) %in% c("Saturday","Sunday")
 activity_with_imputed$weekend <- c("Weekday","Weekend")[activity_with_imputed$weekend+1]
 activity_mean_by_interval_daytype <- aggregate(steps~interval+weekend,data = activity_with_imputed, FUN=mean, na.rm=TRUE)
@@ -94,3 +130,5 @@ ggplot(activity_mean_by_interval_daytype, aes(x=interval, y=steps, color=weekend
   geom_line()+
   facet_wrap(~weekend,ncol=1,nrow=2)
 ```
+
+<img src="figure/pa-1unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
