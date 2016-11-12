@@ -92,5 +92,6 @@ activity_mean_by_interval_daytype <- aggregate(steps~interval+weekend,data = act
 
 ggplot(activity_mean_by_interval_daytype, aes(x=interval, y=steps, color=weekend)) +
   geom_line()+
+  labs(colour = "Day Type")+
   facet_wrap(~weekend,ncol=1,nrow=2)
 ```
