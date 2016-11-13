@@ -181,3 +181,4 @@ sd(activity_with_imputed[activity_with_imputed$daytype=="Weekend",]$step)
 ```
 ## [1] 108.231
 ```
+show that there is a statistical difference, however slight, between the activity patterns.
